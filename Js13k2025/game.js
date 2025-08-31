@@ -262,7 +262,6 @@ let levelStartTime = 0;
 let levelTimes = JSON.parse(localStorage.getItem("levelTimes")) || Array(levels.length).fill(Infinity);
 let levelStars = JSON.parse(localStorage.getItem("levelStars")) || Array(levels.length).fill(0);
 
-// NEW: Story system state
 let storyActive = false;
 let storyMessages = [];
 let currentStoryIndex = 0;
@@ -984,8 +983,8 @@ function playNextNote() {
 }
 
 function startMusic() {
-    if (musicPlaying) return;
-    musicPlaying = true;
+	if (musicPlaying || ac.state !== "running") return;
+    musicPlaying = true;    musicPlaying = true;
     noteIndex = 0;
     playNextNote();
 }
