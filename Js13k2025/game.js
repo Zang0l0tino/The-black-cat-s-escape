@@ -261,11 +261,9 @@ let melodyTimeout;
 let levelStartTime = 0;
 let levelTimes = JSON.parse(localStorage.getItem("levelTimes")) || Array(levels.length).fill(Infinity);
 let levelStars = JSON.parse(localStorage.getItem("levelStars")) || Array(levels.length).fill(0);
-
 let storyActive = false;
 let storyMessages = [];
 let currentStoryIndex = 0;
-
 const melodyFreqs = [220, 247, 262, 294, 330, 392,
     220, 247, 262, 294, 330, 392,
     220, 247, 262, 294, 330, 392,
@@ -300,17 +298,17 @@ const musicGain = ac.createGain();
 const sfxGain = ac.createGain();
 musicGain.connect(ac.destination);
 sfxGain.connect(ac.destination);
-
-cv.addEventListener("click", () => {
+["click", "keydown", "touchstart"].forEach(ev => {
+  window.addEventListener(ev, () => {
     if (ac.state === "suspended") {
-        ac.resume().then(() => {
-            if (!musicPlaying) {
-                startMusic();
-            }
-        });
+      ac.resume().then(() => {
+        if (!musicPlaying) {
+          startMusic();
+        }
+      });
     }
-}, { once: true });
-
+  }, { once: true });
+});
 function loadLevel(levelIndex) {
     const lvl = levels[levelIndex];
     grid = lvl.grid.map(r => r.split(""));
@@ -329,18 +327,15 @@ function loadLevel(levelIndex) {
         tutorialActive = false;
         gameStarted = false;
     }
-
-    // NEW: Initialize story messages for the level
     if (lvl.story && lvl.story.length > 0) {
         storyMessages = lvl.story;
         currentStoryIndex = 0;
-        storyActive = false; // Only becomes true after tutorials finish
+        storyActive = false;
     } else {
         storyMessages = [];
         currentStoryIndex = 0;
         storyActive = false;
     }
-
     if (lvl.objects) {
         for (const obj of lvl.objects) {
             objects[obj.row][obj.col] =
@@ -360,7 +355,6 @@ function loadLevel(levelIndex) {
     }
     levelStartTime = Date.now();
 }
-
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const paragraphs = text.split('\n');
     let currentY = y;
@@ -383,7 +377,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
         currentY += lineHeight;
     }
 }
-
 function drawTutorialMessage() {
     if (!tutorialActive) return;
     c.fillStyle = "rgba(0,0,0,0.7)";
@@ -402,11 +395,9 @@ function drawTutorialMessage() {
     c.textAlign = "right";
     c.fillText("Click to continue...", 830, 270);
 }
-
-// NEW: Story message drawing (different background color)
 function drawStoryMessage() {
     if (!storyActive) return;
-    c.fillStyle = "rgba(30, 30, 80, 0.85)"; // distinct bluish tone
+    c.fillStyle = "rgba(30, 30, 80, 0.85)";
     c.fillRect(50, 100, 800, 200);
     c.fillStyle = "white";
     c.font = "18px sans-serif";
@@ -422,7 +413,6 @@ function drawStoryMessage() {
     c.textAlign = "right";
     c.fillText("Click to continue...", 830, 270);
 }
-
 function drawCat(row, col) {
     const x = startX + col * (tileSize + spacing);
     const y = startY + row * (tileSize + spacing);
@@ -466,14 +456,12 @@ function drawCat(row, col) {
     c.fillRect(cx - 6, cy + 8, 12, 4);
     c.fill();
 }
-
 function drawMouse() {
     if (!mouse) return;
     const x = startX + mouse.col * (tileSize + spacing);
     const y = startY + mouse.row * (tileSize + spacing);
     drawItem("O", x, y, tileSize);
 }
-
 function drawItem(tile, x, y, tileSize) {
     if (tile === "D") {
 		c.strokeStyle = "black";
@@ -576,7 +564,6 @@ function drawItem(tile, x, y, tileSize) {
         c.stroke();
     }
 }
-
 function drawTeleporters() {
     for (const tp of teleporters) {
         const x = startX + tp.col * (tileSize + spacing);
@@ -607,7 +594,6 @@ function drawTeleporters() {
         c.stroke();
     }
 }
-
 function drawGrid(rows, cols) {
     const defaultStroke = "fff";
     c.lineWidth = 2;
@@ -696,7 +682,6 @@ function drawGrid(rows, cols) {
         }
     }
 }
-
 function drawSlots() {
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
@@ -732,7 +717,6 @@ function drawSlots() {
 		c.fillText("i", sx + 20, sy + 30);
     }
 }
-
 function drawInfoMessage() {
     if (!infoActive) return;
     c.fillStyle = "rgba(0,0,0,0.7)";
@@ -747,7 +731,6 @@ function drawInfoMessage() {
     c.textAlign = "right";
     c.fillText("Click to close...", 780, 270);
 }
-
 function showLevelMenu() {
     inLevelMenu = true;
     c.fillStyle = "rgba(0,0,0,0.8)";
@@ -796,7 +779,6 @@ function showLevelMenu() {
 		}
 	}
 }
-
 function drawStartMenu() {
     c.fillStyle = "rgba(0,0,0,0.8)";
     c.fillRect(200, 150, 500, 200);
@@ -828,7 +810,6 @@ function drawGoButton() {
     c.textBaseline = "middle";
     c.fillText("GO!", gx + gSize / 2, gy + gSize / 2);
 }
-
 function drawResetButton() {
     const rx = 20 + 190 * items.length + 40 + 10;
     const ry = 430;
@@ -841,7 +822,6 @@ function drawResetButton() {
     c.textBaseline = "middle";
     c.fillText("↻", rx + rSize / 2, ry + rSize / 2);
 }
-
 function drawCancelButton() {
     const cx = 20 + 190 * items.length + 40 + 10 + 50;
     const cy = 430;
@@ -854,7 +834,6 @@ function drawCancelButton() {
     c.textBaseline = "middle";
     c.fillText("✕", cx + cSize / 2, cy + cSize / 2);
 }
-
 function drawStar(c, x, y, size) {
     c.beginPath();
     const outerRadius = size;
@@ -873,7 +852,6 @@ function drawStar(c, x, y, size) {
     c.closePath();
     c.fill();
 }
-
 function drawStars(x, y, stars, size = 8) {
     for (let i = 0; i < stars; i++) {
         c.fillStyle = "gold";
@@ -883,8 +861,6 @@ function drawStars(x, y, stars, size = 8) {
         c.restore();
     }
 }
-
-
 function cancelLastPlacement() {
     if (placedObjects.length === 0 || gameStarted) return;
     const lastObject = placedObjects.pop();
@@ -895,7 +871,6 @@ function cancelLastPlacement() {
     objects[row][col] = null;
     itemCounts[type]++;
 }
-
 function draw() {
     c.clearRect(0, 0, cv.width, cv.height);
 	if (showStartMenu) {
@@ -915,8 +890,6 @@ function draw() {
     drawGoButton();
     drawResetButton();
 	drawCancelButton();
-
-    // Overlay order: tutorial > story > info
     if (tutorialActive) drawTutorialMessage();
     else if (storyActive) drawStoryMessage();
 	if (infoActive) drawInfoMessage();
@@ -932,9 +905,7 @@ function draw() {
 		const starY = 495;
 		drawStars(starX, starY, stars, 16);
 	}
-
 }
-
 function calculateStars(time, levelIndex = currentLevel) {
     const thresholds = levels[levelIndex].starThresholds;
     if (time <= thresholds.gold) return 3;
@@ -942,8 +913,6 @@ function calculateStars(time, levelIndex = currentLevel) {
     if (time <= thresholds.bronze) return 1;
     return 0;
 }
-
-
 function playNote(freq=440, duration=0.2, type="square") {
     try {
         let o = ac.createOscillator();
@@ -962,7 +931,6 @@ function playNote(freq=440, duration=0.2, type="square") {
         console.error("Error playing note:", e);
     }
 }
-
 function playNextNote() {
     if (!musicPlaying) return;
     let freq = melodyFreqs[noteIndex];
@@ -981,19 +949,16 @@ function playNextNote() {
     noteIndex = (noteIndex + 1) % melodyFreqs.length;
     melodyTimeout = setTimeout(playNextNote, dur * 1000);
 }
-
 function startMusic() {
 	if (musicPlaying || ac.state !== "running") return;
-    musicPlaying = true;    musicPlaying = true;
+    musicPlaying = true;
     noteIndex = 0;
     playNextNote();
 }
-
 function stopMusic() {
     musicPlaying = false;
     clearTimeout(melodyTimeout);
 }
-
 function sfxItem() {
     [150, 350].forEach((f, i) => {
         setTimeout(() => {
@@ -1001,7 +966,6 @@ function sfxItem() {
         }, i * 150);
     });
 }
-
 function sfxJump() {
     ["sawtooth", "triangle"].forEach((type, i) => {
         let o = ac.createOscillator();
@@ -1018,7 +982,6 @@ function sfxJump() {
         o.stop(ac.currentTime + 0.25);
     });
 }
-
 function sfxTeleport() {
     let o = ac.createOscillator();
     let g = ac.createGain();
@@ -1051,11 +1014,9 @@ function sfxTeleport() {
     sparkle.start(ac.currentTime);
     sparkle.stop(ac.currentTime + 0.15);
 }
-
 function sfxStep() {
     playNote(800, 0.1, "triangle");
 }
-
 function sfxWin() {
     [440, 660, 880].forEach((f, i) => {
         setTimeout(() => {
@@ -1063,7 +1024,6 @@ function sfxWin() {
         }, i * 150);
     });
 }
-
 cv.addEventListener("click", (e) => {
 	if (showStartMenu) {
         const rect = cv.getBoundingClientRect();
@@ -1111,12 +1071,11 @@ cv.addEventListener("click", (e) => {
         currentMessageIndex++;
         if (currentMessageIndex >= tutorialMessages.length) {
             tutorialActive = false;
-            // If there is a story, show it now; otherwise, start the level
             if (storyMessages.length > 0) {
                 storyActive = true;
                 gameStarted = false;
             } else {
-                gameStarted = false; // Wait for GO! or user interactions
+                gameStarted = false;
             }
         }
         return;
@@ -1124,7 +1083,7 @@ cv.addEventListener("click", (e) => {
         currentStoryIndex++;
         if (currentStoryIndex >= storyMessages.length) {
             storyActive = false;
-            gameStarted = false; // remain paused until player presses GO!
+            gameStarted = false;
         }
         return;
     } else if (infoActive) {
@@ -1450,5 +1409,4 @@ function gameLoop() {
     }
     requestAnimationFrame(gameLoop);
 }
-
 gameLoop();
