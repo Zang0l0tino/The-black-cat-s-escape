@@ -299,16 +299,20 @@ const sfxGain = ac.createGain();
 musicGain.connect(ac.destination);
 sfxGain.connect(ac.destination);
 ["click", "keydown", "touchstart"].forEach(ev => {
-  window.addEventListener(ev, () => {
-    if (ac.state === "suspended") {
-      ac.resume().then(() => {
-        if (!musicPlaying) {
-          startMusic();
-        }
-      });
-    }
-  }, { once: true });
+  window.addEventListener(ev, unlockAudio);
 });
+
+function unlockAudio() {
+  if (ac.state === "suspended") {
+    ac.resume();
+  }
+  if (!musicPlaying && ac.state === "running") {
+    startMusic();
+    ["click", "keydown", "touchstart"].forEach(ev => {
+      window.removeEventListener(ev, unlockAudio);
+    });
+  }
+}
 function loadLevel(levelIndex) {
     const lvl = levels[levelIndex];
     grid = lvl.grid.map(r => r.split(""));
@@ -1409,4 +1413,5 @@ function gameLoop() {
     }
     requestAnimationFrame(gameLoop);
 }
+
 gameLoop();
