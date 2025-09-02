@@ -237,6 +237,10 @@ let showStartMenu = maxLevel > 0 && currentLevel !== 0 && currentLevel < levels.
 let unlockedLevels = Array.from({ length: maxLevel + 1 }, (_, i) => i);
 let catWait = 0;
 let mouseMoveWait = 0;
+let gameSpeed = 1.0;
+const MIN_SPEED = 0.25;
+const MAX_SPEED = 2.0;
+const SPEED_STEP = 0.25;
 let MOVE_DELAY = 30;
 let selectedItem = null;
 let placedObjects = [];
@@ -849,6 +853,40 @@ function drawSoundButton() {
     c.textAlign = "center";
     c.fillText(soundOn ? "🔊" : "🔇", sx + 20 , sy + 20, sSize - 10, sSize - 10);
 }
+function drawSpeedMinusButton() {
+    const sx = 20 + 190 * items.length + 40 + 10;
+    const sy = 495;
+    const sSize = 25;
+    c.fillStyle = "#AAAAAA";
+    c.fillRect(sx, sy, sSize, sSize);
+    c.fillStyle = "white";
+    c.font = "24px sans-serif";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText("-", sx + sSize / 2, sy + sSize / 2);
+}
+function drawSpeedPlusButton() {
+    const sx = 20 + 190 * items.length + 40 + 10 + 65;
+    const sy = 495;
+    const sSize = 25;
+    c.fillStyle = "#AAAAAA";
+    c.fillRect(sx, sy, sSize, sSize);
+    c.fillStyle = "white";
+    c.font = "24px sans-serif";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText("+", sx + sSize / 2, sy + sSize / 2);
+}
+function drawSpeedText() {
+    const sx = 20 + 190 * items.length + 40 + 10 + 45;
+    const sy = 495 + 12;
+    c.fillStyle = "white";
+    c.font = "12px sans-serif";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+	c.fillText('Game speed: ', sx, sy - 22);
+    c.fillText(`${gameSpeed.toFixed(2)}x`, sx, sy);
+}
 function drawStar(c, x, y, size) {
     c.beginPath();
     const outerRadius = size;
@@ -906,27 +944,20 @@ function draw() {
     drawResetButton();
 	drawCancelButton();
 	drawSoundButton();
+	drawSpeedMinusButton();
+	drawSpeedPlusButton();
+	drawSpeedText();
     if (tutorialActive) drawTutorialMessage();
     else if (storyActive) drawStoryMessage();
 	if (infoActive) drawInfoMessage();
 	if(inLevelMenu) showLevelMenu();
-    if (gameStarted && !inLevelMenu) {
-		const elapsedTime = Math.floor((Date.now() - levelStartTime) / 1000);
-		c.fillStyle = "white";
-		c.font = "16px sans-serif";
-		c.textAlign = "left";
-		c.fillText(`Time: ${elapsedTime}s`, 20, 400);
-		const stars = calculateStars(elapsedTime, currentLevel);
-		const starX = 20 + 190 * items.length + 50;
-		const starY = 495;
-		drawStars(starX, starY, stars, 16);
-	}
 }
 function calculateStars(time, levelIndex = currentLevel) {
     const thresholds = levels[levelIndex].starThresholds;
-    if (time <= thresholds.gold) return 3;
-    if (time <= thresholds.silver) return 2;
-    if (time <= thresholds.bronze) return 1;
+    const adjustedTime = time * gameSpeed;
+    if (adjustedTime <= thresholds.gold) return 3;
+    if (adjustedTime <= thresholds.silver) return 2;
+    if (adjustedTime <= thresholds.bronze) return 1;
     return 0;
 }
 function playNote(freq=440, duration=0.2, type="square") {
@@ -1195,6 +1226,29 @@ cv.addEventListener("click", (e) => {
 			}
 			return;
 		}
+		    const speedMinusX = 20 + 190 * items.length + 40 + 10;
+			const speedMinusY = 495;
+			const speedMinusSize = 25;
+		if (x >= speedMinusX && x <= speedMinusX + speedMinusSize && y >= speedMinusY && y <= speedMinusY + speedMinusSize) {
+			if (!gameStarted) {
+				gameSpeed = Math.max(MIN_SPEED, gameSpeed - SPEED_STEP);
+				MOVE_DELAY = Math.round(30 / gameSpeed);
+				draw();
+			}
+			return;
+		}
+
+		const speedPlusX = 20 + 190 * items.length + 40 + 65;
+		const speedPlusY = 495;
+		const speedPlusSize = 25;
+		if (x >= speedPlusX && x <= speedPlusX + speedPlusSize && y >= speedPlusY && y <= speedPlusY + speedPlusSize) {
+			if (!gameStarted) {
+				gameSpeed = Math.min(MAX_SPEED, gameSpeed + SPEED_STEP);
+				MOVE_DELAY = Math.round(30 / gameSpeed);
+				draw();
+			}
+			return;
+		}
     }
 });
 
@@ -1262,7 +1316,7 @@ function moveCat() {
                 cat.row = r;
                 cat.col = c;
                 objects[r][c] = null;
-                catWait = 60;
+                catWait = Math.round(60 / gameSpeed);
 				sfxJump();
                 return;
             }
@@ -1292,7 +1346,7 @@ function moveCat() {
         else if (fc !== cat.col) cat.col += Math.sign(fc - cat.col);
         if (fr === cat.row && fc === cat.col) objects[fr][fc] = null;
 		sfxStep();
-        catWait = Math.floor(Math.random() * 30 + 10);
+        catWait = Math.round(Math.floor(Math.random() * 30 + 10) / gameSpeed);
 		return;
     }
 	const adjacentTeleporters = teleporters.filter(tp =>
