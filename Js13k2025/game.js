@@ -474,13 +474,16 @@ function drawMouse() {
 function drawItem(tile, x, y, tileSize) {
     if (tile === "D") {
 		c.strokeStyle = "black";
-		c.beginPath();
-		c.ellipse(x + tileSize/2 - 4, y + tileSize/2, tileSize/4, tileSize/5, 0, 0, Math.PI * 2);
-		c.stroke();
+		c.lineWidth = 2;
+		c.fillStyle = "#1a8bbc";
 		c.beginPath();
 		c.moveTo(x + tileSize/2 + 15, y + tileSize/2 + 6);
 		c.lineTo(x + tileSize/2, y + tileSize/2 - 2);
+		c.lineTo(x + tileSize/2 + 15, y + tileSize/2 - 6);
 		c.closePath();
+		c.fill();
+		c.stroke();
+		c.ellipse(x + tileSize/2 - 4, y + tileSize/2, tileSize/4, tileSize/5, 0, 0, Math.PI * 2);
 		c.stroke();
 		c.beginPath();
 		c.lineTo(x + tileSize/2 + 15, y + tileSize/2 - 6);
@@ -492,15 +495,8 @@ function drawItem(tile, x, y, tileSize) {
 		c.lineTo(x + tileSize/2 + 2, y + 17);
 		c.closePath();
 		c.stroke();
-		c.fillStyle = "#1a8bbc";
 		c.beginPath();
 		c.ellipse(x + tileSize/2 - 4, y + tileSize/2, tileSize/4, tileSize/5, 0, 0, Math.PI * 2);
-		c.fill();
-		c.beginPath();
-		c.moveTo(x + tileSize/2 + 15, y + tileSize/2 + 6);
-		c.lineTo(x + tileSize/2, y + tileSize/2 - 2);
-		c.lineTo(x + tileSize/2 + 15, y + tileSize/2 - 6);
-		c.closePath();
 		c.fill();
 		c.beginPath();
 		c.moveTo(x + tileSize/2 - 4, y + 17);
