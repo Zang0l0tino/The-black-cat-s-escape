@@ -256,6 +256,7 @@ let lastMoveDirection = { dr: 0, dc: 0 };
 let teleporters = [];
 let lastTeleporterUsed = null;
 let musicPlaying = false;
+let soundOn = true;
 let noteIndex = 0;
 let melodyTimeout;
 let levelStartTime = 0;
@@ -801,7 +802,6 @@ function drawStartMenu() {
     c.fillStyle = "white";
     c.fillText("No", 450, 285);
 }
-
 function drawGoButton() {
     const gx = 20 + 190 * items.length;
     const gy = 430;
@@ -837,6 +837,17 @@ function drawCancelButton() {
     c.textAlign = "center";
     c.textBaseline = "middle";
     c.fillText("✕", cx + cSize / 2, cy + cSize / 2);
+}
+function drawSoundButton() {
+	const sx = 20 + 190 * items.length;
+    const sy = 480;
+    const sSize = 40;
+    c.fillStyle = soundOn ? "#4CAF50" : "#f44336";
+    c.fillRect(sx, sy, sSize, sSize); 
+    c.fillStyle = "white";
+    c.font = "20px Arial";
+    c.textAlign = "center";
+    c.fillText(soundOn ? "🔊" : "🔇", sx + 20 , sy + 20, sSize - 10, sSize - 10);
 }
 function drawStar(c, x, y, size) {
     c.beginPath();
@@ -894,6 +905,7 @@ function draw() {
     drawGoButton();
     drawResetButton();
 	drawCancelButton();
+	drawSoundButton();
     if (tutorialActive) drawTutorialMessage();
     else if (storyActive) drawStoryMessage();
 	if (infoActive) drawInfoMessage();
@@ -918,25 +930,28 @@ function calculateStars(time, levelIndex = currentLevel) {
     return 0;
 }
 function playNote(freq=440, duration=0.2, type="square") {
-    try {
-        let o = ac.createOscillator();
-        let g = ac.createGain();
-        o.type = type;
-        o.frequency.value = freq;
-        o.connect(g);
-        g.connect(sfxGain);
-        g.gain.setValueAtTime(0, ac.currentTime);
-        g.gain.linearRampToValueAtTime(0.05, ac.currentTime + 0.01);
-        g.gain.linearRampToValueAtTime(0.05, ac.currentTime + 0.01);
-        g.gain.linearRampToValueAtTime(0, ac.currentTime + duration);
-        o.start(ac.currentTime);
-        o.stop(ac.currentTime + duration);
-    } catch (e) {
-        console.error("Error playing note:", e);
-    }
+	if (soundOn) {
+		try {
+			let o = ac.createOscillator();
+			let g = ac.createGain();
+			o.type = type;
+			o.frequency.value = freq;
+			o.connect(g);
+			g.connect(sfxGain);
+			g.gain.setValueAtTime(0, ac.currentTime);
+			g.gain.linearRampToValueAtTime(0.05, ac.currentTime + 0.01);
+			g.gain.linearRampToValueAtTime(0.05, ac.currentTime + 0.01);
+			g.gain.linearRampToValueAtTime(0, ac.currentTime + duration);
+			o.start(ac.currentTime);
+			o.stop(ac.currentTime + duration);
+		} catch (e) {
+			console.error("Error playing note:", e);
+		}
+	}
 }
 function playNextNote() {
     if (!musicPlaying) return;
+	if (!soundOn) return;
     let freq = melodyFreqs[noteIndex];
     let dur = melodyDurations[noteIndex];
     let o = ac.createOscillator();
@@ -964,6 +979,7 @@ function stopMusic() {
     clearTimeout(melodyTimeout);
 }
 function sfxItem() {
+	if (!soundOn) return;
     [150, 350].forEach((f, i) => {
         setTimeout(() => {
             playNote(f, 0.15);
@@ -971,6 +987,7 @@ function sfxItem() {
     });
 }
 function sfxJump() {
+	if (!soundOn) return;
     ["sawtooth", "triangle"].forEach((type, i) => {
         let o = ac.createOscillator();
         let g = ac.createGain();
@@ -987,6 +1004,7 @@ function sfxJump() {
     });
 }
 function sfxTeleport() {
+	if (!soundOn) return;
     let o = ac.createOscillator();
     let g = ac.createGain();
     o.type = "triangle";
@@ -1019,9 +1037,11 @@ function sfxTeleport() {
     sparkle.stop(ac.currentTime + 0.15);
 }
 function sfxStep() {
+	if (!soundOn) return;
     playNote(800, 0.1, "triangle");
 }
 function sfxWin() {
+	if (!soundOn) return;
     [440, 660, 880].forEach((f, i) => {
         setTimeout(() => {
             playNote(f, 0.15);
@@ -1162,6 +1182,18 @@ cv.addEventListener("click", (e) => {
 		if (x >= cx && x <= cx + cSize && y >= cy && y <= cy + cSize) {
 			cancelLastPlacement();
 			draw();
+		}
+		const sx = 20 + 190 * items.length;
+		const sy = 480;
+		const sSize = 40;
+		if (x >= sx && x <= sx + sSize && y >= sy && y <= sy + sSize) {
+			soundOn = !soundOn;
+			if (soundOn && !musicPlaying) {
+				startMusic();
+			} else if (!soundOn) {
+				stopMusic();
+			}
+			return;
 		}
     }
 });
@@ -1398,9 +1430,7 @@ function loadNextLevel() {
 	localStorage.setItem("currentLevel", currentLevel + 1);
     showLevelMenu();
 }
-
 loadLevel(currentLevel);
-
 function gameLoop() {
     draw();
     if (!inLevelMenu && gameStarted) {
@@ -1413,5 +1443,4 @@ function gameLoop() {
     }
     requestAnimationFrame(gameLoop);
 }
-
 gameLoop();
