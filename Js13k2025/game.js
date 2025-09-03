@@ -229,6 +229,60 @@ const levels = [
 	starThresholds: { gold: 10, silver: 14, bronze: 20 }
 	}
 ];
+class Particle {
+  constructor(x, y, color, size, speed, angle, lifetime) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = size;
+    this.speedX = Math.cos(angle) * speed;
+    this.speedY = Math.sin(angle) * speed;
+    this.lifetime = lifetime;
+    this.maxLifetime = lifetime;
+  }
+
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.lifetime--;
+    return this.lifetime > 0;
+  }
+
+  draw(ctx) {
+    const alpha = this.lifetime / this.maxLifetime;
+    ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * (this.lifetime / this.maxLifetime), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+class ParticleSystem {
+  constructor() {
+    this.particles = [];
+  }
+
+  addParticle(x, y, color, size, speed, angle, lifetime) {
+    this.particles.push(new Particle(x, y, color, size, speed, angle, lifetime));
+  }
+
+  addExplosion(x, y, count, color, size, speed, lifetime) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      this.addParticle(x, y, color, size, speed, angle, lifetime);
+    }
+  }
+
+  update() {
+    this.particles = this.particles.filter(particle => particle.update());
+  }
+
+  draw(ctx) {
+    this.particles.forEach(particle => particle.draw(ctx));
+  }
+}
+
+const particleSystem = new ParticleSystem();
 let currentLevel = 0;
 let ac = new (window.AudioContext || window.webkitAudioContext)();
 let inLevelMenu = false;
@@ -710,7 +764,7 @@ function drawSlots() {
         c.font = "16px sans-serif";
         c.fillText(itemCounts[item], sx + slotWidth - 30, sy + 30);
         let tileChar = item === "FOOD" ? "D" : item === "MOUSE" ? "O" : item === "BOX" ? "X" : "B";
-        drawItem(tileChar, sx + 90, sy + 60, 40);
+        drawItem(tileChar, sx + 70, sy + 50, 40);
 		c.fillStyle = "#3A8DFF";
 		c.beginPath();
 		c.arc(sx + 20, sy + 30, 15, 0, Math.PI * 2);
@@ -739,32 +793,32 @@ function drawInfoMessage() {
 function showLevelMenu() {
     inLevelMenu = true;
     c.fillStyle = "rgba(0,0,0,0.8)";
-    c.fillRect(100, 100, 700, 300);
+    c.fillRect(110, 50, 735, 300);
     c.fillStyle = "white";
     c.font = "24px sans-serif";
     c.textAlign = "center";
-    c.fillText("Level finished!", 450, 140);
+    c.fillText("Level finished!", 480, 90);
     c.fillStyle = "#4CAF50";
-    c.fillRect(250, 180, 150, 50);
+    c.fillRect(320, 130, 150, 50);
     c.fillStyle = "white";
-    c.fillText("Play again", 325, 210);
+    c.fillText("Play again", 395, 155);
     if (currentLevel + 1 < levels.length) {
         c.fillStyle = "#2196F3";
-        c.fillRect(420, 180, 150, 50);
+        c.fillRect(490, 130, 150, 50);
         c.fillStyle = "white";
-        c.fillText("Next level", 495, 210);
+        c.fillText("Next level", 565, 155);
     }
     c.font = "18px sans-serif";
     c.textAlign = "left";
     for (let i = 0; i < levels.length; i++) {
         c.fillStyle = unlockedLevels.includes(i) ? "#4CAF50" : "#757575";
-        c.fillRect(120 + (i * 60), 320, 40, 40);
+        c.fillRect(220 + (i * 60), 270, 40, 40);
         c.fillStyle = "white";
-        c.fillText(i + 1, 135 + (i * 60), 345);
+        c.fillText(i + 1, 235 + (i * 60), 295);
     }
 	const bigStarSize = 20;
-	const bigStarX = 400;
-	const bigStarY = 275;
+	const bigStarX = 440;
+	const bigStarY = 225;
 	for (let i = 0; i < levelStars[currentLevel]; i++) {
 		c.fillStyle = "gold";
 		c.save();
@@ -777,7 +831,7 @@ function showLevelMenu() {
 			for (let s = 0; s < levelStars[i]; s++) {
 				c.fillStyle = "gold";
 				c.save();
-				c.translate(130 + (i * 60) + s * 10, 330);
+				c.translate(230 + (i * 60) + s * 10, 280);
 				drawStar(c, 0, 0, 5);
 				c.restore();
 			}
@@ -947,6 +1001,8 @@ function draw() {
     else if (storyActive) drawStoryMessage();
 	if (infoActive) drawInfoMessage();
 	if(inLevelMenu) showLevelMenu();
+	particleSystem.update();
+    particleSystem.draw(c);
 }
 function calculateStars(time, levelIndex = currentLevel) {
     const thresholds = levels[levelIndex].starThresholds;
@@ -1097,16 +1153,20 @@ cv.addEventListener("click", (e) => {
 		const rect = cv.getBoundingClientRect();
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
-		if (x >= 250 && x <= 400 && y >= 180 && y <= 230) {
+		if (x >= 320 && x <= 470 && y >= 130 && y <= 180) {
 			inLevelMenu = false;
 			loadLevel(currentLevel);
-		} else if (currentLevel + 1 < levels.length && x >= 420 && x <= 570 && y >= 180 && y <= 230) {
+		} 
+		else if (currentLevel + 1 < levels.length && x >= 490 && x <= 640 && y >= 130 && y <= 180) {
 			inLevelMenu = false;
 			currentLevel++;
 			loadLevel(currentLevel);
-		} else {
+		} 
+		else {
 			for (let i = 0; i < levels.length; i++) {
-				if (x >= 120 + (i * 60) && x <= 160 + (i * 60) && y >= 320 && y <= 360) {
+				const bx = 220 + (i * 60);
+				const by = 270;
+				if (x >= bx && x <= bx + 40 && y >= by && y <= by + 40) {
 					if (unlockedLevels.includes(i)) {
 						inLevelMenu = false;
 						currentLevel = i;
@@ -1171,6 +1231,9 @@ cv.addEventListener("click", (e) => {
 				if (!objects[row][col] && grid[row][col] !== "M" && grid[row][col] !== "F" && grid[row][col] !== "I" && !(row === cat.row && col === cat.col) && !teleporters.some(tp => tp.row === row && tp.col === col)) {
                     if (selectedItem === "MOUSE") {
 						if (mouse === null) {
+							const placeX = startX + col * (tileSize + spacing) + tileSize / 2;
+							const placeY = startY + row * (tileSize + spacing) + tileSize / 2;
+							particleSystem.addExplosion(placeX, placeY, 10, { r: 255, g: 0, b: 0 }, 2, 1, 30);
 							objects[row][col] = "O";
 							mouse = { row, col };
 							itemCounts[selectedItem]--;
@@ -1181,6 +1244,10 @@ cv.addEventListener("click", (e) => {
 						objects[row][col] = selectedItem === "FOOD" ? "D" :
 											selectedItem === "BOX" ? "X" :
 											selectedItem === "BALL" ? "B" : null;
+						const placeX = startX + col * (tileSize + spacing) + tileSize / 2;
+						const placeY = startY + row * (tileSize + spacing) + tileSize / 2;
+						particleSystem.addExplosion(placeX, placeY, 10, { r: 255, g: 0, b: 0 }, 2, 1, 30);
+
 						itemCounts[selectedItem]--;
 						sfxItem();
 						placedObjects.push({row: row, col: col, type: selectedItem});
@@ -1222,9 +1289,9 @@ cv.addEventListener("click", (e) => {
 			}
 			return;
 		}
-		    const speedMinusX = 20 + 190 * items.length + 40 + 10;
-			const speedMinusY = 495;
-			const speedMinusSize = 25;
+		const speedMinusX = 20 + 190 * items.length + 40 + 10;
+		const speedMinusY = 495;
+		const speedMinusSize = 25;
 		if (x >= speedMinusX && x <= speedMinusX + speedMinusSize && y >= speedMinusY && y <= speedMinusY + speedMinusSize) {
 			if (!gameStarted) {
 				gameSpeed = Math.max(MIN_SPEED, gameSpeed - SPEED_STEP);
@@ -1233,8 +1300,7 @@ cv.addEventListener("click", (e) => {
 			}
 			return;
 		}
-
-		const speedPlusX = 20 + 190 * items.length + 40 + 65;
+		const speedPlusX = 20 + 190 * items.length + 40 + 10 + 65;
 		const speedPlusY = 495;
 		const speedPlusSize = 25;
 		if (x >= speedPlusX && x <= speedPlusX + speedPlusSize && y >= speedPlusY && y <= speedPlusY + speedPlusSize) {
@@ -1247,7 +1313,6 @@ cv.addEventListener("click", (e) => {
 		}
     }
 });
-
 function moveCat() {
 	if (mouse === null) {
 		chasing = false;
@@ -1267,6 +1332,12 @@ function moveCat() {
 			if (!(cat.row === tp.destination.row && cat.col === tp.destination.col) && !(lastTeleporterUsed && lastTeleporterUsed.row === tp.row && lastTeleporterUsed.col === tp.col)) {
 				cat.row = tp.destination.row;
                 cat.col = tp.destination.col;
+				const newX = startX + cat.col * (tileSize + spacing) + tileSize / 2;
+                const newY = startY + cat.row * (tileSize + spacing) + tileSize / 2;
+                particleSystem.addExplosion(newX, newY, 20, { r: 0, g: 0, b: 255 }, 3, 2, 40);
+				const newx = tp.col * (tileSize + spacing) + tileSize / 2;
+                const newy = tp.row * (tileSize + spacing) + tileSize / 2;
+                particleSystem.addExplosion(newx, newy, 20, { r: 0, g: 0, b: 255 }, 3, 2, 40);
 				sfxTeleport();
                 catWait = MOVE_DELAY;
 				lastTeleporterUsed = tp.destination;
@@ -1357,7 +1428,6 @@ function moveCat() {
         return;
     }
 }
-
 function moveMouse() {
     if (!mouse) return;
     if (mouseMoveWait > 0) {
@@ -1400,7 +1470,6 @@ function moveMouse() {
     }
     mouseMoveWait = MOVE_DELAY;
 }
-
 function findVisibleFood(row, col) {
     const dirs = [
         [0, 1], [1, 0], [0, -1], [-1, 0]
@@ -1417,7 +1486,6 @@ function findVisibleFood(row, col) {
     }
     return null;
 }
-
 function findVisibleMouse(row, col) {
     const dirs = [
         [0, 1], [1, 0], [0, -1], [-1, 0]
@@ -1434,7 +1502,6 @@ function findVisibleMouse(row, col) {
     }
     return null;
 }
-
 function findPath(startRow, startCol, targetRow, targetCol, avoidCells = new Set()) {
     const rows = grid.length;
     const cols = grid[0].length;
@@ -1468,7 +1535,6 @@ function findPath(startRow, startCol, targetRow, targetCol, avoidCells = new Set
     }
     return null;
 }
-
 function loadNextLevel() {
     if (!unlockedLevels.includes(currentLevel + 1)) {
         unlockedLevels.push(currentLevel + 1);
@@ -1478,6 +1544,9 @@ function loadNextLevel() {
         localStorage.setItem("maxLevel", maxLevel);
     }
 	localStorage.setItem("currentLevel", currentLevel + 1);
+	const catX = startX + cat.col * (tileSize + spacing) + tileSize / 2;
+    const catY = startY + cat.row * (tileSize + spacing) + tileSize / 2;
+    particleSystem.addExplosion(catX, catY, 350, { r: 255, g: 255, b: 0 }, 4, 2, 30);
     showLevelMenu();
 }
 loadLevel(currentLevel);
