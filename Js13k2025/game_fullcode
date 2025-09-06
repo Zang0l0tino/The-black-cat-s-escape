@@ -375,6 +375,7 @@ function unlockAudio() {
   }
 }
 function loadLevel(levelIndex) {
+	placedObjects = [];
     const lvl = levels[levelIndex];
     grid = lvl.grid.map(r => r.split(""));
     cat = { ...lvl.catStart };
